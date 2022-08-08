@@ -1,4 +1,5 @@
 import logging
+import json
 
 logging.basicConfig(filename='AddressBook_logs.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -15,6 +16,10 @@ class Contact:
         self.pin = contacts_dict.get("pin")
         self.phone = contacts_dict.get("phone")
         self.email = contacts_dict.get("email")
+
+    def get_contact_dictionary(self):
+        return {"first_name": self.first_name, "last_name": self.last_name, "address": self.address, "city": self.city,
+                "state": self.state, "country": self.country, "pin": self.pin, "phone": self.phone, "email": self.email}
 
 
 class AddressBook:
@@ -35,7 +40,7 @@ class AddressBook:
         Function to display contact names in address book
         """
         try:
-            if self.contact_dict == {}:
+            if not self.contact_dict:
                 print("No contacts to display")
             else:
                 for key, value in self.contact_dict.items():
@@ -52,12 +57,22 @@ class AddressBook:
         """
         return self.contact_dict.get(name)
 
+    def get_contacts_as_dictionary(self):
+        """
+        Function to return contact as a dictionary
+        """
+        contact_details_dictionary = {}
+        for key, value in self.contact_dict.items():
+            contact_details_dictionary.update({value.first_name: value.get_contact_dictionary()})
+
+        return contact_details_dictionary
+
     def display_contacts(self):
         """
         Function to display contact details
         """
         try:
-            if self.contact_dict == {}:
+            if not self.contact_dict:
                 print("No contacts to display")
             else:
                 for key, value in self.contact_dict.items():
@@ -124,6 +139,36 @@ class MultipleAddressBooks:
         """
         self.address_book_dict.pop(name, "Address Book not present")
 
+    def write_to_json_file(self):
+        """
+        Function to write address book contacts to a JSON file
+        """
+        json_dictionary = {}
+        for address_book_name, address_book_object in self.address_book_dict.items():
+            contact_dictionary = address_book_object.get_contacts_as_dictionary()
+
+            json_dictionary.update({address_book_name: contact_dictionary})
+
+            json_object = json.dumps(json_dictionary, indent=4)
+            with open("contact_info.json", "w") as write_file:
+                write_file.write(json_object)
+
+
+def write_to_json_file():
+    """
+    Function to write contact information to a JSON file
+    """
+    multiple_address_book.write_to_json_file()
+
+
+def read_from_json_file():
+    """
+    Function to read a contact from json file
+    """
+    with open("contact_info.json", "r") as read_file:
+        json_object = json.load(read_file)
+    print(json_object)
+
 
 def add_contact():
     """
@@ -156,6 +201,8 @@ def add_contact():
         contact = Contact(contact_parameters)
 
         address_book_object.add_contact(contact)
+
+        write_to_json_file()
 
     except Exception as e:
         print(e)
@@ -205,6 +252,9 @@ def update_contact():
                            "update_email": update_email}
 
             address_book_object.update_contact(contact_object, update_dict)
+
+            write_to_json_file()
+
     except Exception as e:
         print(e)
         logging.exception(e)
@@ -218,6 +268,8 @@ def delete_contact():
     address_book_object = multiple_address_book.get_address_book_object(address_book_name)
     name = input("Enter first name to delete contact : ")
     address_book_object.delete_contact(name)
+
+    write_to_json_file()
 
 
 def display_address_book_names():
@@ -234,6 +286,8 @@ def delete_address_book():
     address_book_name = input("Enter Address Book name : ")
     multiple_address_book.delete_address_book(address_book_name)
 
+    write_to_json_file()
+
 
 if __name__ == "__main__":
     try:
@@ -242,13 +296,14 @@ if __name__ == "__main__":
         while True:
             choice = int(input("1. Add new contact\n2. Show all names in address book\n3. Show contact info\n"
                                "4. Update contact\n5. Delete contact\n6. Display address book names\n"
-                               "7. Delete an Address Book\n0. Exit\nEnter your choice : "))
+                               "7. Delete an Address Book\n8. Read from a JSON file\n0. Exit\nEnter your choice : "))
 
             choice_dictionary = {1: add_contact, 2: display_names, 3: display_contacts, 4: update_contact,
-                                 5: delete_contact, 6: display_address_book_names, 7: delete_address_book}
+                                 5: delete_contact, 6: display_address_book_names, 7: delete_address_book,
+                                 8: read_from_json_file}
             if choice == 0:
                 break
-            elif choice > 7:
+            elif choice > 8:
                 print("Please enter correct choice")
             else:
                 choice_dictionary.get(choice)()
