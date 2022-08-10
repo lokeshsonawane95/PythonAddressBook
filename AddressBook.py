@@ -1,5 +1,6 @@
 import logging
 import json
+import csv
 
 logging.basicConfig(filename='AddressBook_logs.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -146,24 +147,60 @@ class MultipleAddressBooks:
         json_dictionary = {}
         for address_book_name, address_book_object in self.address_book_dict.items():
             contact_dictionary = address_book_object.get_contacts_as_dictionary()
-
             json_dictionary.update({address_book_name: contact_dictionary})
 
-            json_object = json.dumps(json_dictionary, indent=4)
-            with open("contact_info.json", "w") as write_file:
-                write_file.write(json_object)
+        json_object = json.dumps(json_dictionary, indent=4)
+        with open("contact_info.json", "w") as write_file:
+            write_file.write(json_object)
+
+    def write_to_csv_file(self):
+        """
+        Function to write address book contacts to a CSV file
+        """
+        try:
+            with open("contact_info.csv", "w") as write_file:
+                fieldnames = ['first_name', 'last_name', 'address', 'city', 'state', 'country', 'pin', 'phone', 'email']
+
+                csv_writer = csv.DictWriter(write_file, fieldnames=fieldnames)
+                csv_writer.writeheader()
+
+                for address_book_name, address_book_object in self.address_book_dict.items():
+                    contact_dictionary = address_book_object.get_contacts_as_dictionary()
+                    for key, value in contact_dictionary.items():
+                        csv_writer.writerow(value)
+        except Exception as e:
+            print(e)
+            logging.exception(e)
+
+
+def write_to_csv_file():
+    """
+    Function to write contacts information to a CSV file
+    """
+    multiple_address_book.write_to_csv_file()
+
+
+def read_from_csv_file():
+    """
+    Function to read contacts from a CSV file
+    """
+    with open("contact_info.csv", "r") as read_file:
+        csv_reader = csv.DictReader(read_file)
+
+        for line in csv_reader:
+            print(line)
 
 
 def write_to_json_file():
     """
-    Function to write contact information to a JSON file
+    Function to write contacts information to a JSON file
     """
     multiple_address_book.write_to_json_file()
 
 
 def read_from_json_file():
     """
-    Function to read a contact from json file
+    Function to read contacts from json file
     """
     with open("contact_info.json", "r") as read_file:
         json_object = json.load(read_file)
@@ -203,6 +240,8 @@ def add_contact():
         address_book_object.add_contact(contact)
 
         write_to_json_file()
+
+        write_to_csv_file()
 
     except Exception as e:
         print(e)
@@ -255,6 +294,8 @@ def update_contact():
 
             write_to_json_file()
 
+            write_to_csv_file()
+
     except Exception as e:
         print(e)
         logging.exception(e)
@@ -270,6 +311,8 @@ def delete_contact():
     address_book_object.delete_contact(name)
 
     write_to_json_file()
+
+    write_to_csv_file()
 
 
 def display_address_book_names():
@@ -288,6 +331,8 @@ def delete_address_book():
 
     write_to_json_file()
 
+    write_to_csv_file()
+
 
 if __name__ == "__main__":
     try:
@@ -296,14 +341,15 @@ if __name__ == "__main__":
         while True:
             choice = int(input("1. Add new contact\n2. Show all names in address book\n3. Show contact info\n"
                                "4. Update contact\n5. Delete contact\n6. Display address book names\n"
-                               "7. Delete an Address Book\n8. Read from a JSON file\n0. Exit\nEnter your choice : "))
+                               "7. Delete an Address Book\n8. Read from a JSON file\n9. Read from a CSV file\n"
+                               "0. Exit\nEnter your choice : "))
 
             choice_dictionary = {1: add_contact, 2: display_names, 3: display_contacts, 4: update_contact,
                                  5: delete_contact, 6: display_address_book_names, 7: delete_address_book,
-                                 8: read_from_json_file}
+                                 8: read_from_json_file, 9: read_from_csv_file}
             if choice == 0:
                 break
-            elif choice > 8:
+            elif choice > 9:
                 print("Please enter correct choice")
             else:
                 choice_dictionary.get(choice)()
